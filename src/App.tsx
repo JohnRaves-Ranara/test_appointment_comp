@@ -14,6 +14,7 @@ import {
 } from "date-fns";
 import { useState } from "react";
 import Test from "./Test";
+import WeekCalendar from "./WeekCalendar";
 
 type appointment = {
   date: string
@@ -22,7 +23,7 @@ type appointment = {
 }
 
 function App() {
-  return <Test/>
+  return <WeekCalendar/>
   // const today = startOfToday();
   // const [selectedDay, setSelectedDay] = useState(today);
   // const [currentMonth, setCurrentMonth] = useState<string>(
