@@ -1,161 +1,156 @@
+import { useRef, useEffect, useState, Fragment } from "react";
+import {
+  endOfWeek,
+  startOfWeek,
+  addDays,
+  startOfToday,
+  subDays,
+  format,
+  isEqual,
+} from "date-fns";
 
-import { useRef, useEffect, useState } from "react";
+import { appointments } from "./appointments";
 
-type appointment = {
-  name: string;
-  startTime: Date;
-  endTime: Date;
-  dayIndex?: number;
-};
+function getDatesOfWeek(date: Date): Date[] {
+  // Get the start and end of the week (Monday to Sunday)
+  const start = startOfWeek(date, { weekStartsOn: 1 }); // weekStartsOn: 1 means Monday
+  const end = endOfWeek(date, { weekStartsOn: 1 });
 
-const daysOfTheWeek = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+  // Initialize an array to hold the dates
+  const datesOfWeek: Date[] = [];
 
-const appointmentsStatic: appointment[] = [
-  {
-    name: "Rendell",
-    startTime: new Date(2024, 4, 28, 21, 30),
-    endTime: new Date(2024, 4, 28, 22, 35),
-  },
-  {
-    name: "Gab",
-    startTime: new Date(2024, 4, 27, 15, 0),
-    endTime: new Date(2024, 4, 27, 17, 45),
-  },
-  {
-    name: "Gerome",
-    startTime: new Date(2024, 5, 2, 7, 22),
-    endTime: new Date(2024, 5, 2, 10, 45),
-  },
-];
+  // Loop from start of the week to end of the week
+  for (let day = start; day <= end; day = addDays(day, 1)) {
+    datesOfWeek.push(day);
+  }
 
-// function getOffsetY(
-//   containerRef: HTMLDivElement | null,
-//   elementRef: HTMLDivElement | null
-// ) {
-//   const containerRect = containerRef?.getBoundingClientRect();
-//   const elementRect = elementRef?.getBoundingClientRect();
-
-//   if (containerRect && elementRect) {
-//     return elementRect.top - containerRect.top + (containerRef?.scrollTop ?? 0);
-//   }
-// }
-
-// function getCardPositions(appointment: appointment, times: time[]) {
-//   const foundStartTime = times.find((time) => {
-//     return appointment.startTime === time.time;
-//   });
-
-//   const foundEndTime = times.find((time) => {
-//     return appointment.endTime === time.time;
-//   });
-
-//   const translateY = foundStartTime?.offsetY;
-//   const itemHeight =
-//     translateY && foundEndTime?.offsetY
-//       ? foundEndTime.offsetY - translateY
-//       : undefined;
-
-//   return { translateY, itemHeight };
-// }
-
+  return datesOfWeek;
+}
 export default function Test2() {
   const firstTimeBlockRef = useRef<HTMLDivElement>(null);
   const [timeBlockHeight, setTimeBlockHeight] = useState(0);
-  const [appointments, setAppointments] = useState<appointment[]>([]);
+  const today = startOfToday();
+  const [weekDates, setWeekDates] = useState<Date[]>([]);
+  const [startDate, setStartDate] = useState<Date>(getDatesOfWeek(today)[0]);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+  const [calendarContainerWidth, setCalendarContainerWidth] = useState(0);
 
   useEffect(() => {
     if (!firstTimeBlockRef.current) return;
-
-    const timeBlockHeight =
-      firstTimeBlockRef.current.getBoundingClientRect().height;
-    setTimeBlockHeight(timeBlockHeight);
-
-    setAppointments(
-      appointmentsStatic.map((appointment) => {
-        return {
-          ...appointment,
-          dayIndex:
-            appointment.startTime.getDay() - 1 === -1
-              ? 6
-              : appointment.startTime.getDay() - 1,
-        };
-      })
+    if (!calendarContainerRef.current) return;
+    setTimeBlockHeight(
+      firstTimeBlockRef.current.getBoundingClientRect().height
+    );
+    setCalendarContainerWidth(
+      calendarContainerRef.current.getBoundingClientRect().width
     );
   }, []);
 
+  //for next/prev week button
+  useEffect(() => {
+    setWeekDates(getDatesOfWeek(startDate));
+  }, [startDate, setWeekDates]);
+
   return (
-    <div className="flex flex-col h-screen p-6">
+    <div className="flex flex-col h-screen p-6 text-main_primary font-poppins">
       <div className="flex w-full overflow-y-scroll header-scrollbar">
-        <div className="w-[10%] bg-green-200 grid place-items-center">Time</div>
-        {daysOfTheWeek.map((dayOfTheWeek, index) => {
+        <div className="w-[10%] bg-calendar_borders grid place-items-center"></div>
+        {weekDates.map((weekDate, dateIndex) => {
           return (
-            <div key={index} className="flex-1 py-4 text-center bg-green-200">
-              {dayOfTheWeek}
+            <div
+              key={dateIndex}
+              className={`flex-1 py-4 text-center bg-calendar_bg border-calendar_borders border-b ${
+                dateIndex !== weekDates.length - 1 ? "border-r" : ""
+              }`}
+            >
+              <p className="font-bold">{format(weekDate, "EEEE")}</p>
+              <p>{format(weekDate, `MMMM d, yyyy`)}</p>
             </div>
           );
         })}
       </div>
-      <div className="flex-1 overflow-auto">
+      <div
+        ref={calendarContainerRef}
+        className="flex-1 overflow-x-hidden overflow-y-auto"
+      >
         <div className="flex">
-          <div className="w-[10%]">
+          <div className="w-[10%] relative">
             {Array.from({ length: 24 }).map((hour, index) => {
               return (
-                <div
-                  className={`py-6 text-center text-white bg-gray-400 border-black ${
-                    index !== 23 ? "border-b" : ""
-                  }`}
-                  key={index}
-                  ref={index === 0 ? firstTimeBlockRef : null}
-                >
-                  <p>{`${index < 10 ? "0" : ""}${index}:00`}</p>
-                </div>
+                <Fragment key={index}>
+                  {index !== 0 && (
+                    <div
+                      style={{
+                        width: `${calendarContainerWidth}px`,
+                      }}
+                      className="absolute h-[1px] bg-calendar_borders"
+                    ></div>
+                  )}
+                  <div
+                    className={`py-12 text-center bg-calendar_borders`}
+                    key={index}
+                    ref={index === 0 ? firstTimeBlockRef : null}
+                  >
+                    <p>{`${index < 10 ? "0" : ""}${index}:00`}</p>
+                  </div>
+                </Fragment>
               );
             })}
           </div>
-          <div className="flex flex-1 bg-blue-200">
-            {daysOfTheWeek.map((dayOfTheWeek, dayIndex) => {
+          <div className="flex flex-1 bg-calendar_bg">
+            {weekDates.map((weekDate, dateIndex) => {
               return (
                 <div
                   className={`relative flex-1 flex flex-col items-center ${
-                    dayIndex !== daysOfTheWeek.length - 1 ? "border-r" : ""
-                  } border-gray-500`}
+                    dateIndex !== weekDates.length - 1 ? "border-r" : ""
+                  } border-calendar_borders`}
                 >
                   {appointments
-                    .filter((appointment) => appointment.dayIndex === dayIndex)
+                    .filter((appointment) => {
+                      return (
+                        format(appointment.startTime, "MMM dd yyyy") ===
+                        format(weekDate, "MMM dd yyyy")
+                      );
+                    })
                     .map((appointmentDay, appointmentDayIndex) => {
                       const minToHr = (min: number) => min / 60;
+                      //function that calulcates top offset of element
+                      const getTopOffset = (
+                        timeHour: number,
+                        timeMinute: number
+                      ) => {
+                        const timeTotalHrs = timeHour + minToHr(timeMinute);
+                        return timeTotalHrs * timeBlockHeight;
+                      };
+
+                      //getting start time top offset
                       const startTimeHour = appointmentDay.startTime.getHours();
                       const startTimeMinute =
                         appointmentDay.startTime.getMinutes();
-                      const startTimeTotalHrs =
-                        startTimeHour + minToHr(startTimeMinute);
+                      const startTimeTopOffset = getTopOffset(
+                        startTimeHour,
+                        startTimeMinute
+                      );
 
-                      const translateY = startTimeTotalHrs * timeBlockHeight;
-
+                      //getting end time top offset
                       const endTimeHour = appointmentDay.endTime.getHours();
-                      const endTimeMinutes =
-                        appointmentDay.endTime.getMinutes();
-                      const endTimeTotalHrs =
-                        endTimeHour + minToHr(endTimeMinutes);
+                      const endTimeMinute = appointmentDay.endTime.getMinutes();
+                      const endTimeTopOffset = getTopOffset(
+                        endTimeHour,
+                        endTimeMinute
+                      );
 
+                      //calculating height of appointment block
                       const appointmentBlockHeight =
-                        (endTimeTotalHrs - startTimeTotalHrs) * timeBlockHeight;
+                        endTimeTopOffset - startTimeTopOffset;
                       return (
                         <div
                           style={{
-                            transform: `translateY(${translateY}px)`,
+                            transform: `translateY(${startTimeTopOffset}px)`,
                             height: `${appointmentBlockHeight}px`,
                           }}
                           key={appointmentDayIndex}
-                          className="absolute w-[90%] bg-blue-500 px-2 flex flex-col items-center justify-center gap-1 text-white rounded-lg text-sm text-center"
+                          className="absolute w-[90%] bg-white px-2 flex flex-col items-center justify-center gap-1 rounded-3xl text-sm text-center border-2 border-green-500"
                         >
                           <p>Consulation with {appointmentDay.name}</p>
                           <p>{`${
@@ -164,10 +159,9 @@ export default function Test2() {
                             startTimeMinute < 10 ? "0" : ""
                           } - ${
                             endTimeHour < 10 ? "0" : ""
-                          }${endTimeHour}:${endTimeMinutes}${
-                            endTimeMinutes < 10 ? "0" : ""
+                          }${endTimeHour}:${endTimeMinute}${
+                            endTimeMinute < 10 ? "0" : ""
                           }`}</p>
-                          <p>{`${daysOfTheWeek[appointmentDay.dayIndex!]}`}</p>
                         </div>
                       );
                     })}
@@ -179,102 +173,4 @@ export default function Test2() {
       </div>
     </div>
   );
-  // const timeRefs = useRef<(HTMLDivElement | null)[]>([]);
-  // const containerRef = useRef<HTMLDivElement | null>(null);
-
-  // const [times, setTimes] = useState<time[]>(timesArray);
-
-  // useEffect(() => {
-  //   setTimes(
-  //     times.map((time, index) => {
-  //       return {
-  //         ...time,
-  //         offsetY: getOffsetY(containerRef.current, timeRefs.current[index]),
-  //       };
-  //     })
-  //   );
-  // }, []);
-
-  // return (
-  //   <div className="flex flex-col h-screen p-6">
-  //     <div className="flex w-full overflow-y-scroll header-scrollbar">
-  //       <div className="w-[10%] bg-green-200 grid place-items-center">Time</div>
-  //       {daysOfTheWeek.map((dayOfTheWeek, index) => {
-  //         return (
-  //           <div key={index} className="flex-1 py-4 text-center bg-green-200">
-  //             {dayOfTheWeek.day}
-  //           </div>
-  //         );
-  //       })}
-  //     </div>
-  //     <div className="flex-1 overflow-auto">
-  //       <div className="flex">
-  //         <div ref={containerRef} className="w-[10%]">
-  //           {hours.map((hour, index) => {
-  //             return (
-  //               <div
-  //                 key={index}
-  //                 className="relative flex flex-col justify-start"
-  //               >
-  //                 <p className={`z-10 py-6 text-lg text-center text-gray-200 border border-black`}>
-  //                   {hour.hour}:00
-  //                 </p>
-  //                 <div className="absolute flex flex-col size-full">
-  //                   {times.map((time, index) => {
-  //                     if (time.time.split(":")[0] === hour.hour) {
-  //                       return (
-  //                         <div
-  //                           id={time.time}
-  //                           key={index}
-  //                           ref={(el) => {
-  //                             timeRefs.current[index] = el;
-  //                           }}
-  //                           className="flex-1 bg-gray-500"
-  //                         ></div>
-  //                       );
-  //                     }
-  //                   })}
-  //                 </div>
-  //               </div>
-  //             );
-  //           })}
-  //         </div>
-  //         <div className="flex flex-1 bg-blue-200">
-  //           {daysOfTheWeek.map((dayOfTheWeek, index) => {
-  //             return (
-  //               <div
-  //                 key={index}
-  //                 className={`relative flex flex-col items-center flex-1 border-gray-500 ${
-  //                   index !== daysOfTheWeek.length - 1 ? "border-r" : ""
-  //                 }`}
-  //               >
-  //                 {appointments.map((appointment, index) => {
-  //                   const { translateY, itemHeight } = getCardPositions(
-  //                     appointment,
-  //                     times
-  //                   );
-  //                   if (appointment.day === dayOfTheWeek.day) {
-  //                     return (
-  //                       <div
-  //                         key={index}
-  //                         style={{
-  //                           transform: `translateY(${translateY}px)`,
-  //                           height: `${itemHeight}px`,
-  //                         }}
-  //                         className="text-center px-3 gap-3 absolute flex flex-col items-center justify-center w-[90%] font-semibold text-white bg-purple-500 rounded-xl"
-  //                       >
-  //                         <p>Consultation for {appointment.name}</p>
-  //                         <p>{`${appointment.startTime} - ${appointment.endTime}`}</p>
-  //                       </div>
-  //                     );
-  //                   }
-  //                 })}
-  //               </div>
-  //             );
-  //           })}
-  //         </div>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
 }

@@ -4,6 +4,8 @@ import {
   addDays,
   startOfToday,
   subDays,
+  format,
+  isEqual
 } from "date-fns";
 import { useEffect, useState } from "react";
 
@@ -34,15 +36,19 @@ export default function WeekCalendar() {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-8">
+      <div className="text-lg">{`${format(startDate, "MMM dd yyyy")} - ${format(
+        endOfWeek(startDate),
+        "MMM dd yyyy"
+      )}`}</div>
       <div className="flex gap-12">
         <button
-          onClick={() => setStartDate(subDays(startDate, 6))}
+          onClick={() => setStartDate(subDays(startDate, 7))}
           className="px-8 py-6 text-center text-white bg-blue-300"
         >
           PREV
         </button>
         <button
-          onClick={() => setStartDate(addDays(startDate, 6))}
+          onClick={() => setStartDate(addDays(startDate, 7))}
           className="px-8 py-6 text-center text-white bg-green-300"
         >
           NEXT

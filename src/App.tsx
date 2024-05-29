@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import Test from "./Test";
 import WeekCalendar from "./WeekCalendar";
+import Test2 from "./Test2";
 
 type appointment = {
   date: string
@@ -23,7 +24,7 @@ type appointment = {
 }
 
 function App() {
-  return <WeekCalendar/>
+  return <Test2/>
   // const today = startOfToday();
   // const [selectedDay, setSelectedDay] = useState(today);
   // const [currentMonth, setCurrentMonth] = useState<string>(

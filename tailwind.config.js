@@ -7,7 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        calendar_bg: "#d5e2f5"
+        calendar_bg: "#d5e2f5",
+        main_primary: "#2F4E6E",
+        calendar_borders: "#c2cddf"
+      },
+      fontFamily: {
+        poppins: 'poppins'
       }
     },
   },
